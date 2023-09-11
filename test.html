@@ -1,0 +1,84 @@
+```
+from bs4 import BeautifulSoup
+import requests
+import pandas as pd
+import numpy as np
+
+def get_merchant_title(soup):
+
+    try:
+        title=soup.find("h1",attrs={"class":"merchant-title"})
+        title_string=title.text.strip()
+    except AttributeError:
+        title_string=""
+    return title_string
+
+def get_offer_title(soup):
+
+    try:
+        offer_ttile=soup.find("div",attrs={"class":"offer-title"})
+        offer_ttile_string=offer_ttile.text.strip()
+    except AttributeError:
+        offer_ttile_string=""
+    return offer_ttile_string
+def get_verification(soup):
+
+    try:
+        verify=soup.find("div",attrs={"class":"verified-tag cd_exclusive"})
+        verify_string=verify.text.strip()
+    except AttributeError:
+        verify_string=""
+    return verify_string
+def get_description(soup):
+
+    try:
+        desc=soup.find("div",attrs={"class":"offer-desc"})
+        desc_string=desc.text.strip()
+    except AttributeError:
+        desc_string=""
+    return desc_string
+
+def get_coupon_code(soup):
+
+    try:
+        code=soup.find("div",attrs={"class":"p1-code"})
+        code_string=code.string.strip()
+    except AttributeError:
+        code_string= ""
+    return code_string
+
+if __name__=="__main__":
+    URL='https://www.coupondunia.in/category/food-and-dining?subcategories=&banks=&sortBy=popularity&noOfPages=1&tab=all&new_user=false'
+    HEADERS=({'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36','Accept-Language':'en-US,en;q=0.5'})
+    webpage=requests.get(URL,headers=HEADERS)
+    soup=BeautifulSoup(webpage.content,'html.parser')
+    links=soup.find_all("a")
+    links_list=[]
+    for link in links:
+        links_list.append(link.get('href'))
+        
+    
+
+    link_=[x for x in links_list if x is not None and "https" not in x and "#" not in x and x!="/" and "//" not in x]
+    # print(link_)
+
+    data=[]
+    
+    for link in link_:
+        new_webpage=requests.get("https://www.coupondunia.in"+link,headers=HEADERS)
+        new_soup = BeautifulSoup(new_webpage.content, "html.parser")
+        print("https://www.coupondunia.in"+link)
+        merchant_title = get_merchant_title(new_soup)
+        if merchant_title != "":
+            d = {}
+            d["merchant_title"] = merchant_title
+            d["offer_title"] = get_offer_title(new_soup)
+            d["description"] = get_description(new_soup)
+            d["coupon_code"] = get_coupon_code(new_soup)
+            d["verified"] = get_verification(new_soup)
+            data.append(d)
+            print(d)
+
+    coupons_df=pd.DataFrame.from_dict(data)
+    print(coupons_df)
+```
